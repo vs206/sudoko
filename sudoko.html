@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sudoku</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Set theme on initial load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -25,6 +33,9 @@
             margin: auto;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        .dark .sudoku-grid {
+             border-color: #6b7280;
+        }
         .sudoku-cell {
             border: 1px solid #d1d5db; /* A light gray for inner cells */
             display: flex;
@@ -33,9 +44,15 @@
             font-size: clamp(1rem, 5vw, 1.5rem);
             font-weight: 600;
         }
+        .dark .sudoku-cell {
+            border-color: #4b5563;
+        }
         /* Thicker borders for 3x3 sub-grids */
         .sudoku-cell:nth-child(3n) {
             border-right-color: #4b5563; /* A medium gray */
+        }
+        .dark .sudoku-cell:nth-child(3n) {
+            border-right-color: #9ca3af;
         }
         .sudoku-cell:nth-child(9n) {
             border-right: none;
@@ -43,6 +60,10 @@
         .sudoku-cell:nth-child(n+19):nth-child(-n+27),
         .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
             border-bottom-color: #4b5563;
+        }
+         .dark .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+         .dark .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom-color: #9ca3af;
         }
         .cell-input {
             width: 100%;
@@ -57,6 +78,9 @@
             padding: 0;
             -moz-appearance: textfield; /* Firefox */
         }
+        .dark .cell-input {
+            color: #e5e7eb;
+        }
         .cell-input::-webkit-outer-spin-button,
         .cell-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -65,35 +89,55 @@
         .cell-input:focus {
             background-color: #e0f2fe; /* Light blue on focus */
         }
+        .dark .cell-input:focus {
+            background-color: #0c4a6e; /* Darker blue on focus */
+        }
         .prefilled {
             background-color: #f3f4f6; /* A very light gray for pre-filled numbers */
             color: #374151; /* Darker gray for pre-filled text */
             font-weight: 700;
         }
+        .dark .prefilled {
+            background-color: #374151;
+            color: #d1d5db;
+        }
         .incorrect {
             background-color: #fee2e2 !important; /* Light red for incorrect answers */
             color: #b91c1c !important; /* Darker red */
+        }
+        .dark .incorrect {
+            background-color: #7f1d1d !important;
+            color: #fecaca !important;
         }
         .correct {
              background-color: #dcfce7 !important; /* Light green for correct answers */
              color: #166534 !important; /* Darker green */
         }
+        .dark .correct {
+             background-color: #14532d !important;
+             color: #dcfce7 !important;
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-300">
 
     <div class="w-full max-w-2xl mx-auto">
-        <header class="text-center mb-6">
-            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">Sudoku</h1>
-            <p class="text-slate-600 mt-2">Challenge your mind!</p>
+        <header class="text-center mb-6 relative">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white">Sudoku</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">Challenge your mind!</p>
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" type="button" class="absolute top-0 right-0 p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm">
+                <svg id="theme-toggle-dark-icon" class="hidden h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="hidden h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 10.607a1 1 0 011.414 0l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+            </button>
         </header>
 
-        <main class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+        <main class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg">
             <!-- Game Controls -->
             <div id="game-controls" class="flex flex-wrap justify-center gap-2 mb-6">
                 <div class="flex items-center gap-2">
-                    <label for="difficulty" class="font-medium text-slate-700">Difficulty:</label>
-                    <select id="difficulty" class="rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label for="difficulty" class="font-medium text-slate-700 dark:text-slate-300">Difficulty:</label>
+                    <select id="difficulty" class="bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="easy">Easy</option>
                         <option value="medium" selected>Medium</option>
                         <option value="hard">Hard</option>
@@ -115,7 +159,7 @@
             <div id="message-area" class="text-center mt-4 h-6 font-medium"></div>
         </main>
         
-        <footer class="text-center mt-6 text-slate-500 text-sm">
+        <footer class="text-center mt-6 text-slate-500 dark:text-slate-400 text-sm">
             <p>Built with ❤️ and JavaScript</p>
         </footer>
     </div>
@@ -129,40 +173,61 @@
             const solveBtn = document.getElementById('solve-btn');
             const difficultySelect = document.getElementById('difficulty');
             const messageArea = document.getElementById('message-area');
+            const themeToggleButton = document.getElementById('theme-toggle');
+            const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+            const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
             // --- Game State ---
             let solutionBoard = [];
             let puzzleBoard = [];
             const N = 9; // Size of the grid
 
+            // --- Theme Switcher Logic ---
+            function updateThemeIcon() {
+                if (document.documentElement.classList.contains('dark')) {
+                    themeToggleLightIcon.classList.remove('hidden');
+                    themeToggleDarkIcon.classList.add('hidden');
+                } else {
+                    themeToggleLightIcon.classList.add('hidden');
+                    themeToggleDarkIcon.classList.remove('hidden');
+                }
+            }
+
+            themeToggleButton.addEventListener('click', () => {
+                // toggle theme
+                document.documentElement.classList.toggle('dark');
+                
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.theme = 'dark';
+                } else {
+                    localStorage.theme = 'light';
+                }
+                updateThemeIcon();
+            });
+            
+            // Set initial icon state
+            updateThemeIcon();
+
+
             // --- Core Sudoku Logic ---
 
             /**
              * Creates a new Sudoku board from scratch.
-             * 1. Fills the diagonal 3x3 matrices.
-             * 2. Fills the remaining cells using a backtracking solver.
-             * 3. Removes a certain number of digits based on difficulty.
              */
             function createNewPuzzle() {
-                // Initialize empty board
                 let board = Array.from({ length: N }, () => Array(N).fill(0));
-                
-                // 1. Fill the 3x3 diagonal boxes
                 for (let i = 0; i < N; i = i + 3) {
                     fillBox(board, i, i);
                 }
-
-                // 2. Fill the remaining cells
                 solveSudoku(board);
-                solutionBoard = board.map(row => [...row]); // Deep copy for the solution
-
-                // 3. Poke holes (remove numbers)
+                solutionBoard = board.map(row => [...row]);
                 puzzleBoard = solutionBoard.map(row => [...row]);
+                
                 const difficulty = difficultySelect.value;
                 let holes;
                 if (difficulty === 'easy') holes = 40;
                 else if (difficulty === 'medium') holes = 50;
-                else holes = 60; // Hard
+                else holes = 60;
 
                 while (holes > 0) {
                     const row = Math.floor(Math.random() * N);
@@ -176,8 +241,6 @@
             
             /**
              * Solves a Sudoku puzzle using backtracking.
-             * @param {number[][]} board - The Sudoku grid.
-             * @returns {boolean} - True if a solution exists, false otherwise.
              */
             function solveSudoku(board) {
                 for (let row = 0; row < N; row++) {
@@ -186,10 +249,8 @@
                             for (let num = 1; num <= N; num++) {
                                 if (isSafe(board, row, col, num)) {
                                     board[row][col] = num;
-                                    if (solveSudoku(board)) {
-                                        return true;
-                                    }
-                                    board[row][col] = 0; // Backtrack
+                                    if (solveSudoku(board)) return true;
+                                    board[row][col] = 0;
                                 }
                             }
                             return false;
@@ -201,9 +262,6 @@
 
             /**
              * Fills a 3x3 box with random unique numbers.
-             * @param {number[][]} board - The Sudoku grid.
-             * @param {number} row - The starting row of the box.
-             * @param {number} col - The starting column of the box.
              */
             function fillBox(board, row, col) {
                 let num;
@@ -219,11 +277,6 @@
 
             /**
              * Checks if a number is safe to place in a given cell.
-             * @param {number[][]} board - The Sudoku grid.
-             * @param {number} row - The row index.
-             * @param {number} col - The column index.
-             * @param {number} num - The number to check.
-             * @returns {boolean}
              */
             function isSafe(board, row, col, num) {
                 return (
@@ -234,16 +287,12 @@
             }
 
             function isSafeInRow(board, row, num) {
-                for (let col = 0; col < N; col++) {
-                    if (board[row][col] === num) return false;
-                }
+                for (let col = 0; col < N; col++) if (board[row][col] === num) return false;
                 return true;
             }
 
             function isSafeInCol(board, col, num) {
-                for (let row = 0; row < N; row++) {
-                    if (board[row][col] === num) return false;
-                }
+                for (let row = 0; row < N; row++) if (board[row][col] === num) return false;
                 return true;
             }
 
@@ -277,18 +326,12 @@
                             const input = document.createElement('input');
                             input.type = 'number';
                             input.classList.add('cell-input');
-                            input.min = 1;
-                            input.max = 9;
+                            input.setAttribute('aria-label', `Cell R${row+1} C${col+1}`);
                             input.dataset.row = row;
                             input.dataset.col = col;
-                            // Input validation
                             input.addEventListener('input', () => {
-                                if (input.value.length > 1) {
-                                    input.value = input.value.slice(0, 1);
-                                }
-                                if (parseInt(input.value) === 0) {
-                                    input.value = '';
-                                }
+                                if (input.value.length > 1) input.value = input.value.slice(0, 1);
+                                if (parseInt(input.value) === 0) input.value = '';
                             });
                             cell.appendChild(input);
                         }
@@ -297,17 +340,11 @@
                 }
             }
             
-            /**
-             * Starts a new game by generating and rendering a puzzle.
-             */
             function startNewGame() {
                 createNewPuzzle();
                 renderBoard();
             }
 
-            /**
-             * Checks the user's current solution against the correct one.
-             */
             function checkSolution() {
                 clearMessage();
                 let isComplete = true;
@@ -319,12 +356,11 @@
                     const col = parseInt(input.dataset.col);
                     const userValue = parseInt(input.value);
                     
-                    // Reset cell styles
                     input.parentElement.classList.remove('incorrect', 'correct');
 
                     if (!userValue) {
                         isComplete = false;
-                        return; // Continue to next input
+                        return;
                     }
 
                     if (userValue === solutionBoard[row][col]) {
@@ -335,29 +371,19 @@
                     }
                 });
                 
-                // Provide feedback message
-                if (!isCorrect) {
-                   showMessage("Some numbers are incorrect. Keep trying!", 'error');
-                } else if (!isComplete) {
-                   showMessage("Looking good, but not finished yet!", 'info');
-                } else {
-                   showMessage("Congratulations! You solved it!", 'success');
-                }
+                if (!isCorrect) showMessage("Some numbers are incorrect. Keep trying!", 'error');
+                else if (!isComplete) showMessage("Looking good, but not finished yet!", 'info');
+                else showMessage("Congratulations! You solved it!", 'success');
                 
-                // Remove feedback styles after a few seconds
                 setTimeout(() => {
                     inputs.forEach(input => input.parentElement.classList.remove('incorrect', 'correct'));
                 }, 3000);
             }
 
-            /**
-             * Fills the board with the complete solution.
-             */
             function solveAndShow() {
                 clearMessage();
                 for (let row = 0; row < N; row++) {
                     for (let col = 0; col < N; col++) {
-                         // Find the correct cell in the DOM
                          const cellElement = boardElement.children[row * N + col];
                          if (cellElement.querySelector('input')) {
                              cellElement.querySelector('input').value = solutionBoard[row][col];
@@ -369,10 +395,10 @@
 
             function showMessage(msg, type = 'info') {
                  messageArea.textContent = msg;
-                 messageArea.classList.remove('text-red-600', 'text-green-600', 'text-slate-600');
-                 if(type === 'error') messageArea.classList.add('text-red-600');
-                 else if (type === 'success') messageArea.classList.add('text-green-600');
-                 else messageArea.classList.add('text-slate-600');
+                 messageArea.classList.remove('text-red-600', 'text-green-600', 'text-slate-600', 'dark:text-red-400', 'dark:text-green-400', 'dark:text-slate-400');
+                 if(type === 'error') messageArea.classList.add('text-red-600', 'dark:text-red-400');
+                 else if (type === 'success') messageArea.classList.add('text-green-600', 'dark:text-green-400');
+                 else messageArea.classList.add('text-slate-600', 'dark:text-slate-400');
             }
 
             function clearMessage(){
@@ -390,4 +416,3 @@
     </script>
 </body>
 </html>
-
